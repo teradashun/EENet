@@ -1,0 +1,19 @@
+training:
+  batch_size: 64
+  epochs: 1
+  lr: 0.1   # {SGD: 0.1, Adam: 0.001}
+  optim_name: SGD   # SGD or Adam
+  model_name: eenet32  
+  dataset: CIFAR10   # [MNIST, CIFAR10, CIFAR100]
+  num_ee: 4  # [2, 4, 8]
+  distribution: linear  # [pareto, linear, fine] # exitの分布を決定するパラメータ
+  loss_func: v1  # [v1, v2]
+  zero_init_residual: False  # bool # 初期化方法の違いによる性能差を評価するためのフラグ
+  exit_plot_num: 10000  # 結果のプロット数
+
+FL:
+  global_rounds: 30
+  num_clients: 5
+  dirichlet: 10000000000   # [0.1, 10000000000]
+  ite_num: 3
+  cohort: 5
