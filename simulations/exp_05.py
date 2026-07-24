@@ -635,7 +635,7 @@ if __name__ == "__main__":
         "results",
         f"model={model_name}",
         f"α={dirichlet}",
-        f"K={num_clients}"
+        f"K={cohort}"
         )
     os.makedirs(save_dir, exist_ok=True)
     
