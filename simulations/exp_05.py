@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torch import nn
+from torch.optim.lr_scheduler import StepLR
 
 from src.utils import set_seed, choose_clients, select_optimizer, load_config, calculate_percentile_thresholds
 from src.dataset import get_datasets, split_dataset
@@ -529,6 +530,34 @@ def convert_bn_to_gn(module, num_groups=8, affine=True):
     return module
 
 
+def get_saved_model_dir(save_root, model_name, dirichlet, cohort):
+    """saved_models/{model_name}/{dirichlet}/{cohort} のパスを組み立てる"""
+    return os.path.join(
+        save_root,
+        "saved_models",
+        str(model_name),
+        str(dirichlet),
+        str(cohort)
+    )
+
+
+def save_model(model, model_name, dirichlet, cohort, params, save_root):
+    """訓練済みモデルを saved_models/{model_name}/{dirichlet}/{cohort}/ に保存する。"""
+    save_dir = get_saved_model_dir(save_root, model_name, dirichlet, cohort)
+    os.makedirs(save_dir, exist_ok=True)
+
+    checkpoint = {
+        "model_name": model_name,
+        "params": params,
+        "state_dict": model.state_dict(),
+    }
+
+    save_path = os.path.join(save_dir, "model.pth")
+    torch.save(checkpoint, save_path)
+    print(f"モデルを保存しました: {save_path}")
+    return save_path
+
+
 if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))   # FedAvg/src
     parent_dir = os.path.dirname(current_dir)                  # FedAvg
@@ -594,6 +623,8 @@ if __name__ == "__main__":
 
         ite_acc = []
 
+        current_lr = lr
+
         for round_idx in range(global_rounds):
 
             print(f"Round {round_idx+1}/ {global_rounds}")
@@ -608,11 +639,13 @@ if __name__ == "__main__":
                     local_model,
                     lr
                     )
+                scheduler = StepLR(local_optimizer, step_size=100, gamma=0.1)
 
                 # ローカルでモデルを訓練
                 for _ in range(epochs):
                     train(local_optimizer, local_model, client_loaders[client_idx], device, model_name, loss_func, is_exit)
 
+                scheduler.step()
                 client_updates.append(local_model.state_dict())
 
             weights = [len(subsets[i]) for i in chosen]
@@ -623,8 +656,14 @@ if __name__ == "__main__":
 
             formatted_accs = [f"{acc:.2f}" for acc in test_accs]
             print(f"Test Accuracies for all exits: {formatted_accs}")
+
+            if (round_idx + 1) % 100 == 0:
+                current_lr *= 0.1
         
         acc_history.append(ite_acc)
+        
+        if ite == 0:
+            save_model(global_model, model_name, dirichlet, cohort, params, parent_dir)
     
     acc_history = np.array(acc_history)
     final_acc = np.mean(acc_history, axis=0)
