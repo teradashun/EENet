@@ -633,9 +633,9 @@ if __name__ == "__main__":
     save_dir = os.path.join(
         parent_dir,
         "results",
-        f"{dataset_name}",
-        f"{model_name}",
-        f"{dirichlet},{num_clients},{dirichlet}"
+        f"model={model_name}",
+        f"α={dirichlet}",
+        f"K={num_clients}"
         )
     os.makedirs(save_dir, exist_ok=True)
     
