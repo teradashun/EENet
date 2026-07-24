@@ -18,7 +18,6 @@ from src.local import train, test
 from src.server import federated_learning
 from src.flops_counter import get_model_complexity_info
 from src.resnet import ResNet, ResNet6n2
-from src.norm_tools import find_scale_invariant_conv_weights, capture_reference_norms, norm_report
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -519,7 +518,7 @@ def bn_axis_check(model, eval_loader, calib_loader, device):
 """
 
 
-def convert_bn_to_gn(module, num_groups=8, affine=False):
+def convert_bn_to_gn(module, num_groups=8, affine=True):
     for name, child in module.named_children():
         if isinstance(child, nn.BatchNorm2d):
             c = child.num_features
@@ -592,8 +591,6 @@ if __name__ == "__main__":
         set_seed(ite)
 
         global_model = build_global_model(model_name, params, device)
-        si_names = find_scale_invariant_conv_weights(global_model)
-        ref_norms = capture_reference_norms(global_model, si_names)
 
         ite_acc = []
 
@@ -602,8 +599,9 @@ if __name__ == "__main__":
             print(f"Round {round_idx+1}/ {global_rounds}")
 
             client_updates = []
+            chosen = choose_clients(num_clients, cohort)
 
-            for client_idx in choose_clients(num_clients, cohort):
+            for client_idx in chosen:
                 local_model = copy.deepcopy(global_model)
                 local_optimizer = select_optimizer(
                     optim_name,
@@ -613,15 +611,12 @@ if __name__ == "__main__":
 
                 # ローカルでモデルを訓練
                 for _ in range(epochs):
-                    train(local_optimizer, local_model, client_loaders[client_idx], device, model_name, loss_func,is_exit)
+                    train(local_optimizer, local_model, client_loaders[client_idx], device, model_name, loss_func, is_exit)
 
                 client_updates.append(local_model.state_dict())
 
-            # クライアントのモデルを平均化してグローバルモデルを更新
-            #global_model = federated_learning(client_updates, global_model)
-            global_model = federated_learning(client_updates, global_model, si_names, ref_norms)
-
-            rep = norm_report(global_model, si_names)
+            weights = [len(subsets[i]) for i in chosen]
+            global_model = federated_learning(client_updates, global_model, weights=weights)
 
             test_accs = evaluate_all_exits(global_model, test_loader, device)
             ite_acc.append(test_accs)

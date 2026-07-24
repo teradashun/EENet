@@ -12,8 +12,8 @@ training:
   exit_plot_num: 10000  # 結果のプロット数
 
 FL:
-  global_rounds: 30
-  num_clients: 5
-  dirichlet: 10000000000   # [0.1, 10000000000]
+  global_rounds: 100
+  num_clients: 1
+  dirichlet: 0.1   # [0.1, 10000000000]
   ite_num: 3
-  cohort: 5
+  cohort: 1
