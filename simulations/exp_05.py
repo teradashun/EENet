@@ -637,7 +637,7 @@ if __name__ == "__main__":
                 local_optimizer = select_optimizer(
                     optim_name,
                     local_model,
-                    lr
+                    current_lr
                     )
                 scheduler = StepLR(local_optimizer, step_size=100, gamma=0.1)
 
