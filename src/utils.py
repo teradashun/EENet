@@ -60,11 +60,12 @@ def calculate_percentile_thresholds(model, val_loader, device, num_ee, num_thres
     with torch.no_grad():
         for inputs, _ in val_loader:
             inputs = inputs.to(device)
-            preds = model(inputs)
             
-            # Sigmoidから信頼度を計算
+            # Softmaxから信頼度を計算
             for i in range(num_ee):
-                all_confs[i].extend(preds[i].cpu().numpy().flatten())
+                probs = F.softmax(model(inputs)[i], dim=1)
+                max_probs, _ = torch.max(probs, dim=1)   # サンプルごとに1つ
+                all_confs[i].extend(max_probs.cpu().numpy())
 
     percentiles = np.linspace(0, 100, num_thresholds)
     

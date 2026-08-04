@@ -308,7 +308,7 @@ class EENet(nn.Module):
         self.final_adapter = None
         if is_6n2model:
             num_exit = num_ee + 1
-            final_inplanes = self.get_exit_inplanes(num_exit, total_flops)
+            final_inplanes = self.get_exit_inplanes(num_exit, num_ee)
             if final_inplanes != planes:
                 self.final_adapter = nn.Conv2d(planes, final_inplanes, kernel_size=1, bias=False)
                 planes = final_inplanes

@@ -523,7 +523,7 @@ def convert_bn_to_gn(module, num_groups=8, affine=True):
     for name, child in module.named_children():
         if isinstance(child, nn.BatchNorm2d):
             c = child.num_features
-            g = num_groups if c % num_groups == 0 else 1
+            g = max(1, min(num_groups, c // 4))
             setattr(module, name, nn.GroupNorm(g, c, affine=affine))
         else:
             convert_bn_to_gn(child, num_groups, affine)
@@ -639,13 +639,11 @@ if __name__ == "__main__":
                     local_model,
                     current_lr
                     )
-                scheduler = StepLR(local_optimizer, step_size=100, gamma=0.1)
 
                 # ローカルでモデルを訓練
                 for _ in range(epochs):
                     train(local_optimizer, local_model, client_loaders[client_idx], device, model_name, loss_func, is_exit)
 
-                scheduler.step()
                 client_updates.append(local_model.state_dict())
 
             weights = [len(subsets[i]) for i in chosen]
@@ -653,6 +651,8 @@ if __name__ == "__main__":
 
             test_accs = evaluate_all_exits(global_model, test_loader, device)
             ite_acc.append(test_accs)
+
+            global_model.train()
 
             formatted_accs = [f"{acc:.2f}" for acc in test_accs]
             print(f"Test Accuracies for all exits: {formatted_accs}")
