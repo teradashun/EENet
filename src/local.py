@@ -3,8 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from src.loss_functions import loss
 
-def train(optimizer, model, train_loader, device, model_name, loss_func, is_exit):
+def train(optimizer, model, train_loader, device, model_name, loss_func, frozen_prefixes=()):
     model.train()
+
+    # 共有層のBatchNorm統計も固定する。
+    for name, module in model.named_modules():
+        if name and (name + ".").startswith(frozen_prefixes):
+            module.eval()
 
     for i, (images, labels) in enumerate(train_loader):
         if model_name in ["DNN"]:
@@ -76,3 +81,28 @@ def early_test(model, test_loader, device, threshold, model_name, is_exit):
         acc = 100*correct_preds/total_preds
     
     return acc
+
+
+def fine_tune_personal(
+    optimizer, model, train_loader, device, model_name,
+    shared_prefixes, loss_func, epochs=1,
+):
+    original_flags = {
+        name: p.requires_grad
+        for name, p in model.named_parameters()
+    }
+
+    try:
+        for name, p in model.named_parameters():
+            if name.startswith(shared_prefixes):
+                p.requires_grad_(False)
+
+        for _ in range(epochs):
+            train(
+                optimizer, model, train_loader, device,
+                model_name, loss_func,
+                frozen_prefixes=shared_prefixes,
+            )
+    finally:
+        for name, p in model.named_parameters():
+            p.requires_grad_(original_flags[name])

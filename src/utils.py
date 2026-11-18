@@ -31,7 +31,7 @@ def acc_average(acc_history: list[list]) -> list:
 
 def select_optimizer(optim_name, local_model, lr):
     if optim_name == "SGD":
-        return optim.SGD(local_model.parameters(), lr=lr, weight_decay=1e-4, momentum=0.9)
+        return optim.SGD(local_model.parameters(), lr=lr, weight_decay=0, momentum=0)
     
     elif optim_name == "Adam":
         return optim.Adam(local_model.parameters(), lr=lr)

@@ -36,8 +36,6 @@ def federated_learning(client_updates, global_model, weights=None):
     avg_state = average_models(client_updates, weights)
     global_model.load_state_dict(avg_state)
  
-    return global_model
- 
 
 def report_shared_params(model, verbose=True):
     """state_dict 内で同じ実データを指しているキーのグループを返す。"""

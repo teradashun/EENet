@@ -29,6 +29,9 @@ def loss(loss_func, device, pred, target):
 
     if loss_func == 'v2':
         return loss_v2(loss_func, pred, target)
+    
+    if loss_func == 'v3':
+        return loss_v3(loss_func, pred, target)
 
 
 def loss_v1(loss_func, pred, target):
@@ -57,3 +60,11 @@ def loss_v2(loss_func, pred, target):
         pred_loss += loss * weight
 
     return pred_loss
+
+
+def loss_v3(loss_func, pred, target):
+    weights = (0.2, 0.3, 0.5)
+    return sum(
+        weight * F.cross_entropy(output, target)
+        for weight, output in zip(weights, pred)
+    )
