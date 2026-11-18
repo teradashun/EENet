@@ -9,7 +9,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))   # EE_FL/src
 parent_dir = os.path.dirname(current_dir)                  # EE_FL
 sys.path.append(parent_dir)
 
-def loss(loss_func, device, pred, target):
+def loss(loss_func, device, pred, target, temperature=3):
     """loss function
 
     Arguments are
@@ -30,8 +30,16 @@ def loss(loss_func, device, pred, target):
     if loss_func == 'v2':
         return loss_v2(loss_func, pred, target)
     
-    if loss_func == 'v3':
-        return loss_v3(loss_func, pred, target)
+    if loss_func == 'kd':
+        exits = [pred] if torch.is_tensor(pred) else [p for p in pred if p is not None]
+        logits = torch.stack(exits)     # [Exit数, バッチサイズ, クラス数]
+        
+        # 各端末で計算したExitの平均ロジットから教師分布を作る
+        teacher = F.softmax(logits.detach().mean(dim=0) / temperature, dim=-1)
+        student = F.log_softmax(logits / temperature, dim=-1)
+        kd_loss = -(teacher * student).sum(dim=-1).mean()
+
+        return loss_v1(loss_func, exits, target) + temperature**2 * kd_loss
 
 
 def loss_v1(loss_func, pred, target):
@@ -60,11 +68,3 @@ def loss_v2(loss_func, pred, target):
         pred_loss += loss * weight
 
     return pred_loss
-
-
-def loss_v3(loss_func, pred, target):
-    weights = (0.2, 0.3, 0.5)
-    return sum(
-        weight * F.cross_entropy(output, target)
-        for weight, output in zip(weights, pred)
-    )

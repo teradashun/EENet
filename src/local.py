@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from src.loss_functions import loss
 
-def train(optimizer, model, train_loader, device, model_name, loss_func, frozen_prefixes=()):
+def train(optimizer, model, train_loader, device, model_name, loss_func, temperature, frozen_prefixes=()):
     model.train()
 
     # 共有層のBatchNorm統計も固定する。
@@ -21,7 +21,7 @@ def train(optimizer, model, train_loader, device, model_name, loss_func, frozen_
         optimizer.zero_grad()
 
         preds = model(images)
-        pred_loss = loss(loss_func, device, preds, labels)
+        pred_loss = loss(loss_func, device, preds, labels, temperature)
 
         pred_loss.backward()
         # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)

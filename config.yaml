@@ -7,9 +7,10 @@ training:
   dataset: CIFAR10   # [MNIST, CIFAR10, CIFAR100]
   num_ee: 4  # [2, 4, 8]
   distribution: pareto  # [pareto, linear, fine] # exitの分布を決定するパラメータ
-  loss_func: v2  # [v1, v2, v3]
+  loss_func: kd  # [v1, v2, kd]
   zero_init_residual: False  # bool # 初期化方法の違いによる性能差を評価するためのフラグ
   exit_plot_num: 10000  # 結果のプロット数
+  temperature: 3
 
 FL:
   global_rounds: 50

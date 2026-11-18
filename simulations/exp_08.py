@@ -103,6 +103,7 @@ if __name__ == "__main__":
     dataset_name  = config['training']['dataset']
     num_ee        = config['training']['num_ee']
     loss_func     = config['training']['loss_func']
+    temperature   = config['training']['temperature']
 
     global_rounds = config['FL']['global_rounds']
     num_clients   = config['FL']['num_clients']
@@ -195,7 +196,7 @@ if __name__ == "__main__":
 
                 # ローカルでモデルを訓練
                 for _ in range(epochs):
-                    train(local_optimizer, local_model, client_loaders[client_idx], device, model_name, loss_func)
+                    train(local_optimizer, local_model, client_loaders[client_idx], device, model_name, loss_func, temperature)
 
                 client_updates.append(local_model.state_dict())
 
